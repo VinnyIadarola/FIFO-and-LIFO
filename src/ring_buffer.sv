@@ -21,8 +21,8 @@ module ring_buffer #(
     output logic full, empty
 );
 
-    localparam int FIFO_IDX_W   = (FIFO_SIZE > 1) ? $clog2(FIFO_SIZE)   : 1;  // 0..FIFO_SIZE-1
-    localparam int FIFO_COUNT_W = (FIFO_SIZE > 0) ? $clog2(FIFO_SIZE+1) : 1;  // 0..FIFO_SIZE
+    localparam int FIFO_IDX_WIDTH   = (FIFO_SIZE > 1) ? $clog2(FIFO_SIZE)   : 1;  // 0..FIFO_SIZE-1
+    localparam int FIFO_CNT_WIDTH = (FIFO_SIZE > 0) ? $clog2(FIFO_SIZE+1) : 1;  // 0..FIFO_SIZE
 
     /**********************************************************************
     ******                      Instantiations                       ******
@@ -30,15 +30,15 @@ module ring_buffer #(
     logic [DATA_WIDTH-1:0]   fifo [0:FIFO_SIZE-1];
 
     //Index Tracking
-    logic [FIFO_IDX_W-1:0]   head_index;
-    logic [FIFO_IDX_W-1:0]   new_entry_index;
-    logic [FIFO_COUNT_W-1:0] current_entries;
+    logic [FIFO_IDX_WIDTH-1:0]   head_index;
+    logic [FIFO_IDX_WIDTH-1:0]   new_entry_index;
+    logic [FIFO_CNT_WIDTH-1:0] current_entries;
 
 
     /**********************************************************************
     ******                    General Assignments                    ******
     **********************************************************************/
-    assign full  = (current_entries == FIFO_SIZE[FIFO_COUNT_W-1:0]);
+    assign full  = (current_entries == FIFO_SIZE[FIFO_CNT_WIDTH-1:0]);
     assign empty = (current_entries == '0);
     assign head  = fifo[head_index];
 
@@ -46,9 +46,9 @@ module ring_buffer #(
 
     always_comb begin
         //for further reference automatic stops it from being static (like C) and will be a temp varaible for scope
-        automatic logic [FIFO_IDX_W:0] sum = head_index + current_entries[FIFO_IDX_W-1:0];
+        automatic logic [FIFO_IDX_WIDTH:0] sum = head_index + current_entries[FIFO_IDX_WIDTH-1:0];
 
-        new_entry_index = (sum >= FIFO_SIZE) ? sum - FIFO_SIZE : sum[FIFO_IDX_W-1:0];
+        new_entry_index = (sum >= FIFO_SIZE) ? sum - FIFO_SIZE : sum[FIFO_IDX_WIDTH-1:0];
     end
 
     /**********************************************************************
