@@ -58,7 +58,7 @@ module ring_buffer #(
         if (~rst_n) begin
             head_index <= '0;
         end else if (pop & ~empty) begin
-            head_index <= (head_index != FIFO_size - 1'b1) ? head_index +1'b1 : '0;
+            head_index <= (head_index != FIFO_SIZE - 1'b1) ? head_index +1'b1 : '0;
         end
     end
 

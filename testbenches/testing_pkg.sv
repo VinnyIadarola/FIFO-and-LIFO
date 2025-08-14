@@ -59,7 +59,7 @@ task automatic checkValues1 (
     if (sig2watch === goal_value)
         $display("Passed.");
     else if (signalAsserted & valHold) begin
-        $error("Flaked: reached goal but did not hold.");
+        $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
         $stop();
     end
     else begin
@@ -100,7 +100,8 @@ task automatic checkValues6 (
         $display("Passed.");
     end
     else if (signalAsserted & valHold) begin
-        $error("Flaked: reached goal but did not hold.");
+                $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
+
         $stop();
     end
     else begin
@@ -143,7 +144,8 @@ task automatic checkValues8 (
         $display("Passed.");
     end
     else if (signalAsserted & valHold) begin
-        $error("Flaked: reached goal but did not hold.");
+                $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
+
         $stop();
     end
     else begin
@@ -183,7 +185,8 @@ task automatic checkValues16 (
         $display("Passed.");
     end
     else if (signalAsserted & valHold) begin
-        $error("Flaked: reached goal but did not hold.");
+                $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
+
         $stop();
     end
     else begin
