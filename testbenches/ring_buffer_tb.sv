@@ -6,7 +6,7 @@ module ring_buffer_tb;
 /**************************************************************************
 ***                            Pre Suite Setup                          ***
 **************************************************************************/
-parameter int SUITE = 2;
+parameter int SUITE = 1;
 
 // Shared basic inputs
 logic clk;
@@ -296,7 +296,9 @@ generate if (SUITE == 1) begin : SUITE1
         );
 
         // Drain exactly FIFO_SIZE entries; empty must assert
-        @(negedge clk) begin insert = 1'b0; pop = 1'b1; end
+        @(negedge clk);
+        insert = 1'b0; 
+        pop = 1'b1;
         checkValues8(.refclk(clk), .sig2watch(head), .testnum(5.1), .valHold(1'b1), .clks2wait(1), .goal_value(8'hAA));
         checkValues8(.refclk(clk), .sig2watch(head), .testnum(5.2), .valHold(1'b1), .clks2wait(1), .goal_value(8'hAA));
         checkValues8(.refclk(clk), .sig2watch(head), .testnum(5.3), .valHold(1'b1), .clks2wait(1), .goal_value(8'hAA));
@@ -313,6 +315,94 @@ generate if (SUITE == 1) begin : SUITE1
             .goal_value (1'b1)
         );
 
+        // Test 6.x: Fill to max with AA then insert and pop to replace with 00
+        @(negedge clk);
+        insert = 1'b1; 
+        pop = 1'b0; 
+        entry = 8'hAA;
+        @(posedge full);
+        @(negedge clk);
+        pop = 1'b1;
+        entry = 8'h00;
+
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.1), .valHold(1'b0), .clks2wait(1), .goal_value(8'hAA));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.2), .valHold(1'b0), .clks2wait(1), .goal_value(8'hAA));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.3), .valHold(1'b0), .clks2wait(1), .goal_value(8'hAA));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.4), .valHold(1'b0), .clks2wait(1), .goal_value(8'hAA));
+
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.5), .valHold(1'b0), .clks2wait(1), .goal_value(8'h00));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.6), .valHold(1'b0), .clks2wait(1), .goal_value(8'h00));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.7), .valHold(1'b0), .clks2wait(1), .goal_value(8'h00));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.8), .valHold(1'b0), .clks2wait(1), .goal_value(8'h00));
+        checkValues8(.refclk(clk), .sig2watch(head), .testnum(6.9), .valHold(1'b0), .clks2wait(1), .goal_value(8'h00));
+
+        checkValues1(.refclk(clk), .sig2watch(full), .testnum(6.10), .valHold(1'b1), .clks2wait(1), .goal_value(1'b1));
+
+        // Test 7.x: Empty then add 1 element and ensure inserting and popping stays non empty
+
+        // First, drain to empty (we ended Test 6 full)
+        @(negedge clk);
+        insert = 1'b0;
+        pop    = 1'b1;
+        repeat (FIFO_SIZE) @(negedge clk);
+        @(negedge clk) pop = 1'b0;
+
+        checkValues1(
+            .refclk     (clk),
+            .sig2watch  (empty),
+            .testnum    (7.0),
+            .valHold    (1'b1),
+            .clks2wait  (1),
+            .goal_value (1'b1)
+        );
+
+        // Insert exactly one element -> becomes non-empty
+        @(negedge clk);
+        insert = 1'b1; 
+        pop    = 1'b0; 
+        entry  = 8'h5A;
+        @(negedge clk) insert = 1'b0;
+
+        checkValues1(
+            .refclk     (clk),
+            .sig2watch  (empty),
+            .testnum    (7.1),
+            .valHold    (1'b1),
+            .clks2wait  (1),
+            .goal_value (1'b0)
+        );
+
+        // Now keep queue at depth 1 by asserting insert & pop together.
+        // The head value may change by design, but empty must remain deasserted.
+        @(negedge clk);
+        insert = 1'b1; pop = 1'b1; entry = 8'h11;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.2), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h22;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.3), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h33;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.4), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h44;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.5), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h55;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.6), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h66;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.7), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h77;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.8), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 8'h88;
+        fork
+            checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.9), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+            checkValues8(.refclk(clk), .sig2watch(head), .testnum(7.10), .valHold(1'b0), .clks2wait(1), .goal_value(8'h88));
+            @(negedge clk) begin insert = 1'b0; pop = 1'b0; end
+        join 
+  
         print_all_passed_banner();
         $stop();
     end
@@ -466,11 +556,16 @@ generate if (SUITE == 2) begin : SUITE2
         @(negedge clk);
         insert = 1'b1; 
         pop    = 1'b0;
-        entry  = 16'hAA00; @(negedge clk);
-        entry  = 16'hBB11; @(negedge clk);
-        entry  = 16'hCC22; @(negedge clk);
-        entry  = 16'hDD33; @(negedge clk);
-        entry  = 16'hEE44; @(negedge clk);
+        entry  = 16'hAA00; 
+        @(negedge clk);
+        entry  = 16'hBB11; 
+        @(negedge clk);
+        entry  = 16'hCC22; 
+        @(negedge clk);
+        entry  = 16'hDD33; 
+        @(negedge clk);
+        entry  = 16'hEE44; 
+        @(negedge clk);
 
         // Bulk fill remaining to reach full for FIFO_SIZE=20
         for (integer i = 5; i < FIFO_SIZE; i++) begin
@@ -583,6 +678,70 @@ generate if (SUITE == 2) begin : SUITE2
             .clks2wait  (1),
             .goal_value (1'b1)
         );
+
+        // Test 7.x (Suite 2): Empty, then keep depth at 1 with simultaneous insert+pop; empty must stay 0
+
+        // Drain to empty
+        @(negedge clk);
+        insert = 1'b0; 
+        pop    = 1'b1;
+        repeat (FIFO_SIZE) @(negedge clk);
+        @(negedge clk) pop = 1'b0;
+
+        checkValues1(
+            .refclk     (clk),
+            .sig2watch  (empty),
+            .testnum    (7.0),
+            .valHold    (1'b1),
+            .clks2wait  (1),
+            .goal_value (1'b1)
+        );
+
+        // Insert one element -> non-empty
+        @(negedge clk);
+        insert = 1'b1; 
+        pop    = 1'b0; 
+        entry  = 16'h5A5A;
+        @(negedge clk) insert = 1'b0;
+
+        checkValues1(
+            .refclk     (clk),
+            .sig2watch  (empty),
+            .testnum    (7.1),
+            .valHold    (1'b1),
+            .clks2wait  (1),
+            .goal_value (1'b0)
+        );
+
+        // Keep depth = 1 while swapping elements each cycle with insert & pop together
+        @(negedge clk);
+        insert = 1'b1; pop = 1'b1; entry = 16'h1111;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.2), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h2222;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.3), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h3333;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.4), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h4444;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.5), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h5555;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.6), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h6666;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.7), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h7777;
+        checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.8), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+
+        @(negedge clk) entry = 16'h8888;
+        fork
+            checkValues1(.refclk(clk), .sig2watch(empty), .testnum(7.9), .valHold(1'b0), .clks2wait(1), .goal_value(1'b0));
+            checkValues16(.refclk(clk), .sig2watch(head), .testnum(7.10), .valHold(1'b0), .clks2wait(1), .goal_value(16'h8888));
+            @(negedge clk) begin insert = 1'b0; pop = 1'b0; end
+        join 
 
         print_all_passed_banner();
         $stop();

@@ -55,7 +55,9 @@ task automatic checkValues1 (
         end
     join
 
-    @(negedge refclk)
+    if (valHold)
+        @(negedge refclk);
+
     if (sig2watch === goal_value)
         $display("Passed.");
     else if (signalAsserted & valHold) begin
@@ -95,13 +97,14 @@ task automatic checkValues6 (
         end
     join
 
-    @(negedge refclk)
+    if (valHold)
+        @(negedge refclk);
+
     if (sig2watch === goal_value) begin
         $display("Passed.");
     end
     else if (signalAsserted & valHold) begin
-                $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
-
+        $error("Flaked: reached goal but did not hold. sig=%0d, goal=%0d", sig2watch, goal_value);
         $stop();
     end
     else begin
@@ -139,7 +142,9 @@ task automatic checkValues8 (
         end
     join
 
-    @(negedge refclk)
+    if (valHold)
+        @(negedge refclk);
+
     if (sig2watch === goal_value) begin
         $display("Passed.");
     end
@@ -180,7 +185,9 @@ task automatic checkValues16 (
         end
     join
 
-    @(negedge refclk)
+    if (valHold)
+        @(negedge refclk);
+
     if (sig2watch === goal_value) begin
         $display("Passed.");
     end
