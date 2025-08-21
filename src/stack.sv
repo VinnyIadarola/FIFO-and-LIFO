@@ -15,31 +15,37 @@ module stack #(
     input  wire insert, pop, // no edge detection will activate every cycle
 
     //Data Outputs
-    output logic [DATA_WIDTH-1:0] head,
+    output logic [DATA_WIDTH-1:0] top,
 
     // Control Outputs
     output logic full, empty
 );
 
-    localparam int LIFO_IDX_WIDTH = (LIFO_SIZE > 1) ? $clog2(LIFO_SIZE) : 1;  // 0..LIFO_SIZE-1
+    localparam int LIFO_IDX_WIDTH = (LIFO_SIZE > 1) ?   $clog2(LIFO_SIZE) : 1;  // 0..LIFO_SIZE-1
+    localparam int LIFO_CNT_WIDTH = (LIFO_SIZE > 1) ? $clog2(LIFO_SIZE+1) : 1;  // 0..LIFO_SIZE
+
 
     /**********************************************************************
     ******                      Instantiations                       ******
     **********************************************************************/
     logic [LIFO_IDX_WIDTH-1:0] head_index;
-    wire inc, dec;
+    logic [LIFO_CNT_WIDTH-1:0]      count;
+    wire                         inc, dec;
 
-    logic [DATA_WIDTH-1:0] lifo [0:LIFO_SIZE-1];
-    wire [LIFO_IDX_WIDTH-1:0] write_idx;
-    wire write_en;
+    logic     [DATA_WIDTH-1:0] lifo [0:LIFO_SIZE-1];
+    wire  [LIFO_IDX_WIDTH-1:0] write_idx;
+    wire                        write_en;
 
 
     /**********************************************************************
     ******                    General Assignments                    ******
     **********************************************************************/
-    assign full  = (head_index == LIFO_SIZE[LIFO_IDX_WIDTH-1:0]);
-    assign empty = (head_index == '0);
-    assign head  = lifo[head_index];
+    assign full       = (count == LIFO_SIZE[LIFO_CNT_WIDTH-1:0]);
+    assign empty      = (count == '0);
+
+    assign head_index = (~empty) ? (count - 1'b1)   : '0; // Ensures we dont underflow and go out of bounds
+    assign top        =  lifo[head_index] ;
+
 
 
 
@@ -48,12 +54,12 @@ module stack #(
     **********************************************************************/
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) 
-            head_index <= '0;
-        else
-            head_index <= head_index + inc - dec;
+            count <= '0;
+        else 
+            count <= count + inc - dec;
     end
 
-
+    //insert and pop appear in both to ensure if we do both at the same time nothing changes
     assign inc =  insert & ~pop & ~full;   
     assign dec = ~insert &  pop & ~empty; 
 
@@ -71,8 +77,13 @@ module stack #(
     end
 
 
-    assign write_idx = (pop) ? head_index : head_index + 1'b1;
-    assign write_en = insert | (~full | pop);
+
+    assign write_en = insert & (~full | pop);
+    assign write_idx = (pop) ? head_index : count;
+
+    
+
+
 
 
 

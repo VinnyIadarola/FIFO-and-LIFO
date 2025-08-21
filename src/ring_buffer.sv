@@ -58,20 +58,20 @@ module ring_buffer #(
     /**********************************************************************
     ******                    Index Counter & Logic                  ******
     **********************************************************************/
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk or negedge rst_n) begin //I could just remove the rst and let it be but idk
         if (~rst_n) 
             head_index <= '0;
         else if (pop & ~empty) 
             head_index <= nxt_head_idx;
     end
 
-
+    // wraps around if needed 
     assign nxt_head_idx = (head_index != FIFO_SIZE - 1'b1) ? head_index + 1'b1 : '0;
 
 
 
     /**********************************************************************
-    ******                 Item Counter & Logic                ******
+    ******                    Item Counter & Logic                   ******
     **********************************************************************/
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n)
@@ -79,8 +79,8 @@ module ring_buffer #(
         else 
             current_entries <= current_entries + inc - dec;
     end
-
-
+    
+    //insert and pop are in both to ensure nothing changes if they both are active
     assign inc =  insert & ~pop & ~full;
     assign dec = ~insert &  pop & ~empty;
 
@@ -99,6 +99,7 @@ module ring_buffer #(
 
 
     assign write_en = insert & (~full | pop);
+    // Psuedo modulo to avoid synthesis freaking out if theydont have it
     assign sum = head_index + current_entries[FIFO_IDX_WIDTH-1:0];
     assign write_idx = (sum >= FIFO_SIZE) ? sum - FIFO_SIZE : sum[FIFO_IDX_WIDTH-1:0];
 
